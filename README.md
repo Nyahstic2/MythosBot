@@ -36,7 +36,7 @@ O MythosBot foi desenvolvido para facilitar a organização de mesas de RPG, per
 4. Configure o token do bot no arquivo `config.json`[^1]:
    ```json
    {
-     "DISCORD_BOT_TOKEN" : "seu_token_aqui"
+     "token" : "seu_token_aqui"
    }
    ```
 5. Execute o bot:
