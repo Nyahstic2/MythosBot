@@ -23,7 +23,7 @@ O MythosBot foi desenvolvido para facilitar a organização de mesas de RPG, per
 
 ## Instalação
 1. Certifique-se de ter as seguintes dependências instaladas:
-   - **.NET Framework SDK 9.0**
+   - **.NET Framework SDK 8.0 (Ou melhor)**
    - **Discord.NET**
 2. Clone este repositório:
    ```bash
