@@ -29,20 +29,11 @@ O MythosBot foi desenvolvido para facilitar a organização de mesas de RPG, per
    ```bash
    git clone https://github.com/Nyahstic2/MythosBot.git
    ```
-3. Instale as dependências:
+3. Execute o arquivo:
    ```bash
-   dotnet restore
+   build.bat
    ```
-4. Configure o token do bot no arquivo `config.json`[^1]:
-   ```json
-   {
-     "token" : "seu_token_aqui"
-   }
-   ```
-5. Execute o bot:
-   ```bash
-   dotnet run
-   ```
+   E pronto!
 
 ## Uso
 Trabalho em progresso...
