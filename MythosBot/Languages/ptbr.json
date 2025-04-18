@@ -1,0 +1,8 @@
+{
+  "bot.name": "MythosBot",
+  "bot.status": "Olá, Mundo!",
+
+  "log.bot": "Bot",
+  "log.bot.online": "Bot está online",
+  "log.generic": "Miscelânea"
+}

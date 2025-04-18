@@ -13,13 +13,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Assets\**\*.*">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    <Folder Update="Assets\" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Update="Assets\" />
+    <None Update="Languages\ptbr.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
