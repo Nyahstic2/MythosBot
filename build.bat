@@ -11,7 +11,7 @@ REM Clonar ou atualizar o repositório e branch
 REM -------------------------------------------
 if not exist "MythosBot" (
     echo Clonando o repositório...
-    git clone -b Nyahstic2/MythosBot https://github.com/USERNAME/MythosBot.git
+    git clone https://github.com/Nyahstic2/MythosBot.git
     if errorlevel 1 (
         echo Erro ao clonar o repositório.
         pause
@@ -56,14 +56,14 @@ if errorlevel 1 (
 REM -------------------------------------------
 REM Entrar na pasta do projeto e executar os comandos dotnet
 REM -------------------------------------------
-if not exist "MythosBot\MythosBot" (
+if not exist "\MythosBot" (
     echo Pasta "MythosBot\MythosBot" nao encontrada!
     pause
     exit /b 1
 )
 
 echo Entrando na pasta do projeto...
-cd MythosBot\MythosBot
+cd ./MythosBot
 
 echo Restaurando pacotes...
 dotnet restore
@@ -82,7 +82,8 @@ if errorlevel 1 (
 )
 
 echo Executando o projeto...
-dotnet run
+cd ./bin/Debug/net8.0
+start /wait MythosBot.exe 
 
 echo Processo concluido.
 pause
