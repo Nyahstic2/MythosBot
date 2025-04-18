@@ -19,7 +19,7 @@ O MythosBot foi desenvolvido para facilitar a organização de mesas de RPG, per
 - [ ] Gerenciar inventário com criação de itens.
 - [ ] Criar e gerenciar missões.
 - [ ] Criar NPCs, incluindo templates pré-definidos.
-- [ ] Comunicação integrada via slash-commands do Discord.
+- [ ] Uso dos comandos via slash-commands do Discord.
 
 ## Instalação
 1. Certifique-se de ter as seguintes dependências instaladas:
