@@ -29,6 +29,11 @@ public class Logger
                                 $" {langMan.GetToken("log.command.failed").Replace("##COMMANDNAME##", $"{cmdExc.Command.Aliases.First()}")}.");
             Console.WriteLine(cmdExc);
         }
+        else if (arg.Exception is not null)
+        {
+            Console.WriteLine($"[{langMan.GetToken("log.exception")}/{arg.Severity}] {arg.Exception.Message}");
+            Console.WriteLine(arg.Exception);
+        }
         else
         {
             Console.WriteLine($"[{langMan.GetToken("log.generic")}/{arg.Severity}] {arg.Message}");

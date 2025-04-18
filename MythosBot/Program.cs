@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 // Third Party
 using Discord.WebSocket;
+using Discord.Commands;
 using Discord;
 
 // Our Libraries
@@ -13,11 +14,13 @@ namespace MythosBot;
 class Program
 {
     public static Configuration configuration = new Configuration();
-    public static DiscordSocketClient bot;
+    private static DiscordSocketClient bot;
+    private static CommandService commands = new CommandService();
     static void Main(string[] args)
     {
         new LanguageManager(); // Força a criação do singleton
         var langMan = LanguageManager.Instance;
+        Console.Title = langMan.GetToken("console.warning");
 
         // Carrega a linguagem que está no arquivo de configuração
         if (configuration.GetConfig("lang") != LanguageManager.CurrentLanguage)
@@ -30,7 +33,6 @@ class Program
         }
         configuration.SetConfig("lang", LanguageManager.CurrentLanguage);
 
-        Console.CancelKeyPress += HandleShutdown;
 
         // Inicia o bot
         InitBot().GetAwaiter().GetResult();
@@ -40,12 +42,19 @@ class Program
     static async Task InitBot()
     {
         var token = configuration.GetToken();
-        bot = new DiscordSocketClient();
+        var config = new DiscordSocketConfig
+        {
+            GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent
+        };
+        bot = new DiscordSocketClient(config);
         var logger = new Logger(bot, null);
+        var commandHandler = new CommandHandler(bot, commands);
 
         bot.Ready += GoOnline;
+        Console.CancelKeyPress += HandleShutdown;
 
         await bot.LoginAsync(TokenType.Bot, token);
+        await commandHandler.InstallCommands();
         await bot.StartAsync();
         
 

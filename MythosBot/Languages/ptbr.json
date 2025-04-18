@@ -1,8 +1,18 @@
 {
+  "console.warning": "Por favor *NÃO* precione o botão fechar, use \"Control+C\" para parar corretamente o bot",
+
   "bot.name": "MythosBot",
   "bot.status": "Olá, Mundo!",
 
+  "bot.command.failed": "O comando falhou",
+  "bot.command.failedmotive": "Motivo do erro",
+
+
+  "bot.ping.description": "O bot está funcionando!",
+  "bot.ping.footer": "Ping",
+
   "log.bot": "Bot",
   "log.bot.online": "Bot está online",
-  "log.generic": "Miscelânea"
+  "log.generic": "Miscelânea",
+  "log.exception": "Exceção"
 }
