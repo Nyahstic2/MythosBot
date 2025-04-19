@@ -1,14 +1,14 @@
-#!/bin/bash 
+#!/bin/bash
 
-# Salva a política de execução atual (disponível apenas para sistemas que usam um controle de política)
+# Salva a política de execução atual
 CURRENT_POLICY=$(umask)
 echo "Politica de execucao atual: $CURRENT_POLICY"
 
-# Altera temporariamente a política para permitir execução sem restrições
+# Altera temporariamente a política de execução
 umask 000
 echo "Politica de execucao alterada para Unrestricted."
 
-# Mudando para a pasta MythosBot relativa ao local do script
+# Definição do diretório do projeto
 PROJECT_PATH="$(dirname "$0")/MythosBot"
 
 if [ ! -d "$PROJECT_PATH" ]; then
@@ -40,33 +40,9 @@ echo "Restaurando as dependencias..."
 dotnet restore
 
 echo "Compilando o projeto..."
-dotnet build
+dotnet build --no-restore
 
-# Define a pasta onde o binário foi gerado
-BINARY_FOLDER="$PROJECT_PATH/bin/Debug/net8.0"
-
-if [ ! -d "$BINARY_FOLDER" ]; then
-    echo "Pasta do binario nao encontrada em $BINARY_FOLDER."
-    exit 1
-fi
-
-cd "$BINARY_FOLDER"
-echo "Entrou na pasta do binario: $BINARY_FOLDER"
-
-# Procura o arquivo executável do bot (assumindo que seu nome contenha 'MythosBot')
-BOT_EXE=$(find . -maxdepth 1 -type f -name "*.exe" | grep "MythosBot" | head -n 1)
-
-if [ -n "$BOT_EXE" ]; then
-    echo "Iniciando o bot em um novo processo..."
-    nohup ./"$BOT_EXE" --ask-token &> /dev/null &
-    echo "Bot iniciado com sucesso!"
-else
-    echo "Arquivo executavel do bot nao encontrado. Verifique se a compilacao ocorreu corretamente."
-fi
-
-# Restaura a política de execução original
 umask "$CURRENT_POLICY"
 echo "Politica de execucao restaurada para: $CURRENT_POLICY"
 
 exit 0
-
