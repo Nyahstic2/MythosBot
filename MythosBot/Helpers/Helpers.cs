@@ -2,8 +2,10 @@ using Newtonsoft.Json;
 
 namespace MythosBot;
 
-public static class CurrentLocation{
-    public static string Here(){
+public static class CurrentLocation
+{
+    public static string Here()
+    {
         return Environment.CurrentDirectory;
     }
 }
@@ -18,7 +20,7 @@ public static class FolderDatabase
         }
     }
 
-    public static bool GuildaJ·Existe(ulong id, bool criarCasoN„oEncontrar = true)
+    public static bool GuildaJaExiste(ulong id, bool criarCasoNaoEncontrar = true)
     {
         if (Directory.Exists(CurrentLocation.Here() + "/Database/" + id))
         {
@@ -26,7 +28,7 @@ public static class FolderDatabase
         }
         else
         {
-            if (criarCasoN„oEncontrar)
+            if (criarCasoNaoEncontrar)
             {
                 Directory.CreateDirectory(CurrentLocation.Here() + "/Database/" + id);
                 return true;

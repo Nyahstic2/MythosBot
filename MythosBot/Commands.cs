@@ -135,7 +135,7 @@ namespace MythosBot
         public async Task IniciarDB()
         {
             await Context.Message.ReplyAsync("Iniciando banco de dados...");
-            if (!FolderDatabase.GuildaJáExiste(Context.Guild.Id))
+            if (!FolderDatabase.GuildaJaExiste(Context.Guild.Id))
             {
                 await Context.Channel.SendMessageAsync("Banco de dados criado com sucesso!");
             }
