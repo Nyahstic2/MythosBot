@@ -6,9 +6,6 @@ using Discord.WebSocket;
 using Discord.Commands;
 using Discord;
 
-// Our Libraries
-using MythosBot.Languages;
-
 namespace MythosBot;
 
 class Program
@@ -16,28 +13,14 @@ class Program
     public static Configuration configuration = new Configuration();
     private static DiscordSocketClient bot;
     private static CommandService commands = new CommandService();
+
     static void Main(string[] args)
     {
-        new LanguageManager(); // Força a criação do singleton
-        var langMan = LanguageManager.Instance;
-        Console.Title = langMan.GetToken("console.warning");
-
-        // Carrega a linguagem que está no arquivo de configuração
-        if (configuration.GetConfig("lang") != LanguageManager.CurrentLanguage)
-        {
-            langMan.LoadLanguage(configuration.GetConfig("lang"));
-        }
-        else
-        {
-            langMan.LoadLanguage(LanguageManager.DefaultLanguage);
-        }
-        configuration.SetConfig("lang", LanguageManager.CurrentLanguage);
-
+        Console.Title = "\"Por favor *NÃO* precione o botão fechar, use \"Control+C\" para parar corretamente o bot";
 
         // Inicia o bot
         InitBot().GetAwaiter().GetResult();
     }
-
 
     static async Task InitBot()
     {
@@ -56,18 +39,16 @@ class Program
         await bot.LoginAsync(TokenType.Bot, token);
         await commandHandler.InstallCommands();
         await bot.StartAsync();
-        
 
         await Task.Delay(-1); // Mantém o bot ativo
     }
 
     private async static Task GoOnline()
     {
-        var langMan = LanguageManager.Instance;
         await bot.SetStatusAsync(UserStatus.Online);
-        await bot.SetGameAsync(langMan.GetToken("bot.status"));
-        Console.WriteLine($"[{langMan.GetToken("log.bot")}] {langMan.GetToken("log.bot.online")}");
+        await bot.SetGameAsync("MythosBot está online!");
     }
+
     private static void HandleShutdown(object? sender, ConsoleCancelEventArgs e)
     {
         bot.SetStatusAsync(UserStatus.Offline).GetAwaiter().GetResult();

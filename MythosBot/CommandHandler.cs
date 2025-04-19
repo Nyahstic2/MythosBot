@@ -3,8 +3,6 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 
-// Our Libraries
-using MythosBot.Languages;
 
 namespace MythosBot
 {
@@ -30,7 +28,6 @@ namespace MythosBot
 
         private async Task HandleCommandAsync(SocketMessage smsg)
         {
-            var langMan = LanguageManager.Instance;
             var message = smsg as SocketUserMessage;
             if (message is null) return;
 
@@ -48,8 +45,8 @@ namespace MythosBot
                 {
                     var Embed = new EmbedBuilder();
                     Embed.WithColor(Color.Red);
-                    Embed.WithTitle(langMan.GetToken("bot.command.failed"));
-                    Embed.AddField(langMan.GetToken("bot.command.failedmotive"), result.ErrorReason);
+                    Embed.WithTitle("O comando falhou :(");
+                    Embed.AddField("Motivo do erro:", result.ErrorReason);
                     Embed.WithFooter($"Comando: {context.Message.Content}");
                     Embed.WithCurrentTimestamp();
                     Embed.WithAuthor(context.User.Username, context.User.GetAvatarUrl(), context.User.GetAvatarUrl());

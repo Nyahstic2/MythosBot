@@ -5,9 +5,6 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 
-// Our Libraries
-using MythosBot.Languages;
-
 namespace MythosBot;
 
 public class Logger
@@ -22,21 +19,19 @@ public class Logger
 
     public async Task LogMessage(LogMessage arg)
     {
-        var langMan = LanguageManager.Instance;
         if (arg.Exception is CommandException cmdExc)
         {
-            Console.WriteLine($"[{langMan.GetToken("log.command")}/{langMan.GetToken("log.command.exception")}]" + // Expande para -> [Comando/Exceção] ##COMMANDNAME## (será substituído pelo nome do comando) encontrou um erro enquanto executava.
-                                $" {langMan.GetToken("log.command.failed").Replace("##COMMANDNAME##", $"{cmdExc.Command.Aliases.First()}")}.");
+            Console.WriteLine($"[Comandos/Exceção] Um erro aconteceu enquanto tentava executar o comando {cmdExc.Command}.");
             Console.WriteLine(cmdExc);
         }
         else if (arg.Exception is not null)
         {
-            Console.WriteLine($"[{langMan.GetToken("log.exception")}/{arg.Severity}] {arg.Exception.Message}");
+            Console.WriteLine($"[Exceção] {arg.Exception.Message}");
             Console.WriteLine(arg.Exception);
         }
         else
         {
-            Console.WriteLine($"[{langMan.GetToken("log.generic")}/{arg.Severity}] {arg.Message}");
+            Console.WriteLine($"[Genérico/{arg.Severity}] {arg.Message}");
         }
         await Task.Delay(0);
     }
