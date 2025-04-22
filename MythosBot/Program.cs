@@ -14,12 +14,54 @@ class Program
     private static DiscordSocketClient bot;
     private static CommandService commands = new CommandService();
 
+    static bool podeSerFechado = false;
     static void Main(string[] args)
     {
-        Console.Title = "\"Por favor *NÃO* precione o botão fechar, use \"Control+C\" para parar corretamente o bot";
+        Console.Title = "Por favor *NÃO* precione o botão fechar, use \"Control+C\" para parar corretamente o bot";
 
         // Inicia o bot
-        InitBot().GetAwaiter().GetResult();
+        if (args.Length == 0) IniciarBot();
+        else
+        {
+            if (args.Length > 0)
+            {
+                if (args[0].ToLower() == "--ask-token")
+                {
+                    if (!File.Exists("config.json"))
+                    {
+                        Console.WriteLine("Para o bot executar corretamente, você precisa fornecer o token do bot");
+                        Console.WriteLine("Você pode encontrar o token do bot na página de desenvolvedores do Discord");
+                        Console.WriteLine("https://discord.com/developers/applications");
+                        Console.WriteLine("Digite o token do bot:");
+                        var token = Console.ReadLine();
+                        if (string.IsNullOrEmpty(token))
+                        {
+                            Console.WriteLine("Você não digitou um token válido");
+                            Console.WriteLine("Pressione qualquer tecla para sair...");
+                            Console.ReadKey();
+                            Environment.Exit(-1);
+                        }
+                        else
+                        {
+                            File.WriteAllText("config.json", $"(\"token\":\"{token}\")".Replace('(', '{').Replace(')', '}'));
+                            Console.WriteLine("Token salvo com sucesso");
+                            Console.WriteLine("Pressione qualquer tecla para iniciar o bot...");
+                            Console.ReadKey();
+                            Console.Clear();
+                            IniciarBot();
+                        }
+                    }
+                    else
+                    {
+                        IniciarBot();
+                    }
+                }
+            }
+        }
+
+        void IniciarBot() {
+            InitBot().GetAwaiter().GetResult();
+        }
     }
 
     static async Task InitBot()
@@ -45,12 +87,21 @@ class Program
 
     private async static Task GoOnline()
     {
+        podeSerFechado = true;
         await bot.SetStatusAsync(UserStatus.Online);
-        await bot.SetGameAsync("MythosBot está online!");
+        await bot.SetGameAsync("Criando, Editando e Excluindo personagems!");
     }
 
     private static void HandleShutdown(object? sender, ConsoleCancelEventArgs e)
     {
+        if (!podeSerFechado)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("O bot não pode ser fechado agora, tente novamente mais tarde");
+            Console.ResetColor();
+            e.Cancel = true;
+            return;
+        }
         bot.SetStatusAsync(UserStatus.Offline).GetAwaiter().GetResult();
         bot.LogoutAsync().GetAwaiter().GetResult();
         bot.StopAsync().GetAwaiter().GetResult();
