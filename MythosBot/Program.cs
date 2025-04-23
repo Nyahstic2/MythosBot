@@ -19,7 +19,7 @@ class Program
     static void Main(string[] args)
     {
         AppDomain.CurrentDomain.ProcessExit += (a, b) => {
-            HandleShutdown(a, null);
+            Shutdown();
         };
 
         // Inicia o bot
@@ -97,7 +97,7 @@ class Program
 
     private static void HandleShutdown(object? sender, ConsoleCancelEventArgs? e)
     {
-        if (!podeSerFechado && e != null)
+        if (!podeSerFechado)
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("O bot não pode ser fechado agora, tente novamente mais tarde");
@@ -105,12 +105,20 @@ class Program
             e.Cancel = true;
             return;
         }
+        Shutdown();
+
+        Environment.Exit(0);
+    }
+
+    private static void Shutdown()
+    {
+
         bot.SetStatusAsync(UserStatus.Offline).GetAwaiter().GetResult();
         bot.LogoutAsync().GetAwaiter().GetResult();
         bot.StopAsync().GetAwaiter().GetResult();
 
         configuration.SaveConfig();
 
-        Environment.Exit(0);
+        Thread.Sleep(1000);
     }
 }
