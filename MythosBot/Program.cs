@@ -1,4 +1,4 @@
-﻿// First Party
+// First Party
 using System.Collections.Generic;
 
 // Third Party
@@ -14,10 +14,13 @@ class Program
     private static DiscordSocketClient bot;
     private static CommandService commands = new CommandService();
 
+
     static bool podeSerFechado = false;
     static void Main(string[] args)
     {
-        Console.Title = "Por favor *NÃO* precione o botão fechar, use \"Control+C\" para parar corretamente o bot";
+        AppDomain.CurrentDomain.ProcessExit += (a, b) => {
+            HandleShutdown(a, null);
+        };
 
         // Inicia o bot
         if (args.Length == 0) IniciarBot();
@@ -92,9 +95,9 @@ class Program
         await bot.SetGameAsync("Criando, Editando e Excluindo personagems!");
     }
 
-    private static void HandleShutdown(object? sender, ConsoleCancelEventArgs e)
+    private static void HandleShutdown(object? sender, ConsoleCancelEventArgs? e)
     {
-        if (!podeSerFechado)
+        if (!podeSerFechado && e != null)
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("O bot não pode ser fechado agora, tente novamente mais tarde");
@@ -108,7 +111,6 @@ class Program
 
         configuration.SaveConfig();
 
-        Thread.Sleep(1000);
         Environment.Exit(0);
     }
 }
