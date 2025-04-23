@@ -30,11 +30,11 @@ public class Logger
             case LogSeverity.Error:
                 Console.ForegroundColor = ConsoleColor.Red;
                 break;
+            case LogSeverity.Verbose:
             case LogSeverity.Warning:
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 break;
             case LogSeverity.Info:
-            case LogSeverity.Verbose:
                 Console.ForegroundColor = ConsoleColor.Cyan;
                 break;
             case LogSeverity.Debug:
