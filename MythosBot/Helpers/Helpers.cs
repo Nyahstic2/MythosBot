@@ -59,7 +59,7 @@ public static class FolderDatabase
     {
         if (Directory.Exists(CurrentLocation.Here() + "/Database/" + id))
         {
-            var path = CurrentLocation.Here() + "/Database/" + id + "/" + DateTime.Now.Ticks + ".json";
+            var path = CurrentLocation.Here() + "/Database/" + id + "/" + personagem.Id + ".json";
             File.WriteAllText(path, JsonConvert.SerializeObject(personagem, Formatting.Indented));
         }
         else
@@ -74,7 +74,7 @@ public static class FolderDatabase
         var personagem = ListarPersonagensParaGuilda(id).First(p => p.Nome.Equals(nome));
         if (Directory.Exists(CurrentLocation.Here() + "/Database/" + id))
         {
-            var path = CurrentLocation.Here() + "/Database/" + id + "/" + personagem.Nome + ".json";
+            var path = CurrentLocation.Here() + "/Database/" + id + "/" + personagem.Id + ".json";
             File.Delete(path);
         }
         else

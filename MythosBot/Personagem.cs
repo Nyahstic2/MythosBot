@@ -6,6 +6,7 @@ namespace MythosBot
 {
     public class Personagem
     {
+        public long Id { get; set; }
         public ulong Autor { get; set; }
         public string Nome { get; set; }
         [Editavel]

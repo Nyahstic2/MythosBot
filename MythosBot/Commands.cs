@@ -1,4 +1,4 @@
-﻿// Third Party
+﻿
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -44,6 +44,7 @@ namespace MythosBot
                     var personagem = new Personagem();
                     personagem.Nome = nome;
                     personagem.Autor = Context.User.Id;
+                    personagem.Id = DateTime.Now.Ticks;
                     if (!FolderDatabase.ContemPersonagemComEsteNome(Context.Guild.Id,nome))
                     {
                         FolderDatabase.AdicionarPersonagem(Context.Guild.Id, personagem);
@@ -66,8 +67,17 @@ namespace MythosBot
                         await Context.Message.ReplyAsync("Você precisa fornecer um nome para poder deletar o personagem");
                         break;
                     }
-                    FolderDatabase.RemoverPersonagem(Context.Guild.Id, nome);
-                    await Context.Message.ReplyAsync($"Personagem {nome} foi excluido!");
+                    var personagemParaDeletar = FolderDatabase.ListarPersonagensParaGuilda(Context.Guild.Id).First(x => x.Nome == nome);
+                    if (personagemParaDeletar is not null)
+                    {
+                        if (personagemParaDeletar.Autor != Context.User.Id)
+                        {
+                            await Context.Message.ReplyAsync($"Você precisa ser dono do personagem {nome} para poder deletar.");
+                            return;
+                        }
+                        FolderDatabase.RemoverPersonagem(Context.Guild.Id, personagemParaDeletar.Nome);
+                        await Context.Message.ReplyAsync($"Personagem {nome} foi excluido!");
+                    }
                     break;
 
                 case "l":

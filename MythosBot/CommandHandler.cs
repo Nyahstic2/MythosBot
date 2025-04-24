@@ -1,4 +1,4 @@
-﻿// Third Party
+﻿
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;

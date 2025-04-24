@@ -1,7 +1,7 @@
-// First Party
+
 using System.Collections.Generic;
 
-// Third Party
+
 using Discord.WebSocket;
 using Discord.Commands;
 using Discord;

@@ -1,7 +1,7 @@
-// First Party
+
 using System.Diagnostics;
 
-// Third Party
+
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
