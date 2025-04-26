@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MythosBot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            color: #333;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        p {
+            margin-bottom: 30px;
+        }
+
+        #dots {
+            text-align: initial;
+            word-wrap: break-word; 
+            white-space: normal; 
+            margin: 0 auto;
+            max-width: 99.9vw;     
+        }
+    </style>
+</head>
+<body>
+    <h1>Em construção...</h1>
+    <p>Enquanto isso, veja pontos!</p>
+    <div id="dots"></div>
+    <script>
+        const dots = document.getElementById("dots");
+
+        setInterval(() => {
+            dots.innerText += '............';
+        }, 1);
+    </script>
+</body>
+</html>
