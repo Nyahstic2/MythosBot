@@ -62,6 +62,8 @@ namespace MythosBot
             var message = smsg as SocketUserMessage;
             if (message is null) return;
 
+            var hasCallback = Callbacks.ContainsKey(message.Author.Id) && (!message.Author.IsBot || !message.Author.IsWebhook);
+
             int argPos = 0;
 
             if(
@@ -71,25 +73,37 @@ namespace MythosBot
             )
             {
                 var context = new SocketCommandContext(bot, message);
-                var result = await commandService.ExecuteAsync(context, argPos, null); // Então executamos o comando
-                if (!result.IsSuccess) // Falhamos em executar o comando
+                await context.Channel.TriggerTypingAsync();
+                if (hasCallback)
                 {
-                    var Embed = new EmbedBuilder();
-                    Embed.WithColor(Color.Red);
-                    Embed.WithTitle("O comando falhou :(");
-                    Embed.AddField("Motivo do erro:", result.ErrorReason);
-                    Embed.WithFooter($"Comando: {context.Message.Content}");
-                    Embed.WithCurrentTimestamp();
-                    Embed.WithAuthor(context.User.Username, context.User.GetAvatarUrl(), context.User.GetAvatarUrl());
-                    await context.Channel.SendMessageAsync(embed: Embed.Build());
+                    await context.Message.ReplyAsync("> Você está fazendo algo, termine (ou cancele) o comando pendente para poder interagir comigo");
+                }
+                else
+                {
+                    var result = await commandService.ExecuteAsync(context, argPos, null); // Então executamos o comando
+
+                    if (!result.IsSuccess) // Falhamos em executar o comando
+                    {
+                        var Embed = new EmbedBuilder();
+                        Embed.WithColor(Color.Red);
+                        Embed.WithTitle("O comando falhou :(");
+                        Embed.AddField("Motivo do erro:", result.ErrorReason);
+                        Embed.WithFooter($"Comando: {context.Message.Content}");
+                        Embed.WithCurrentTimestamp();
+                        Embed.WithAuthor(context.User.Username, context.User.GetAvatarUrl(), context.User.GetAvatarUrl());
+                        await context.Channel.SendMessageAsync(embed: Embed.Build());
+                        await context.Message.AddReactionAsync(Emoji.Parse("❌"));
+                        await logger.LogMessage(new LogMessage(LogSeverity.Error, "Comandos", result.ErrorReason));
+                    }
                 }
             }
             else
             {
-                if (Callbacks.ContainsKey(message.Author.Id) && (!message.Author.IsBot || !message.Author.IsWebhook)) //Ainda ignoramos webhooks
+                if (hasCallback)
                 {
                     var context = new SocketCommandContext(bot, message);
                     var usr = context.User as SocketGuildUser;
+                    await context.Channel.TriggerTypingAsync();
                     Callbacks[message.Author.Id].Invoke(usr, context);
                     CallbacksTimeout[message.Author.Id] = CallbacksTimeout[message.Author.Id] - 1;
                     await lg.LogMessage(new LogMessage(LogSeverity.Info, "Callback de Comando", $"Executando callback de um comando para o usuário {usr.Username}, falta {CallbacksTimeout[usr.Id]} callback(s)"));

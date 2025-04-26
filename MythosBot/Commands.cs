@@ -2,7 +2,11 @@
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using NAudio.Wave;
+using Newtonsoft.Json;
+using System.Net.Mime;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -22,20 +26,14 @@ namespace MythosBot
             await Context.Message.ReplyAsync(embed: Embed.Build());
         }
 
-        [Command("personagem", false, "", ["p", "c", "char", "character", "persona", "sona", "s"])]
+        [Command("personagem", Aliases = ["p", "c", "char", "character", "persona"])]
         public async Task GerenciarSona(string comando, [Remainder] string nome = "")
         {
             if (nome.Length > 128) nome = nome.Substring(0, 127);
             switch (comando.ToLower())
             {
-                case "c":
-                case "criar":
-                case "novo":
-                case "new":
                 case "n":
-                case "add":
-                case "adicionar":
-                case "a":
+                case "new":
                     if (string.IsNullOrEmpty(nome))
                     {
                         await Context.Message.ReplyAsync("Você precisa fornecer um nome para o personagem.");
@@ -48,20 +46,17 @@ namespace MythosBot
                     if (!FolderDatabase.ContemPersonagemComEsteNome(Context.Guild.Id,nome))
                     {
                         FolderDatabase.AdicionarPersonagem(Context.Guild.Id, personagem);
-                        await Context.Message.ReplyAsync($"Personagem {nome} criado com sucesso!\nPara poder editar o personagem, por favor use .edit <nome do personagem>");
+                        await Context.Message.ReplyAsync($"Personagem `{nome}` criado com sucesso!\nPara poder editar o personagem, por favor use .edit <nome do personagem>");
                     }
                     else
                     {
-                        await Context.Message.ReplyAsync($"O Personagem {nome} já existe!");
+                        await Context.Message.ReplyAsync($"O Personagem `{nome}` já existe!");
                     }
                     break;
 
                 case "r":
-                case "remover":
                 case "rm":
-                case "del":
-                case "deletar":
-                case "excluir":
+                case "remover":
                     if (string.IsNullOrEmpty(nome))
                     {
                         await Context.Message.ReplyAsync("Você precisa fornecer um nome para poder deletar o personagem");
@@ -70,22 +65,18 @@ namespace MythosBot
                     var personagemParaDeletar = FolderDatabase.ListarPersonagensParaGuilda(Context.Guild.Id).First(x => x.Nome == nome);
                     if (personagemParaDeletar is not null)
                     {
-                        if (personagemParaDeletar.Autor != Context.User.Id)
+                        if (personagemParaDeletar.Autor != Context.User.Id || Context.Guild.OwnerId != Context.User.Id)
                         {
-                            await Context.Message.ReplyAsync($"Você precisa ser dono do personagem {nome} para poder deletar.");
+                            await Context.Message.ReplyAsync($"Você precisa ser dono do personagem `{nome}` para poder deletar.");
                             return;
                         }
                         FolderDatabase.RemoverPersonagem(Context.Guild.Id, personagemParaDeletar.Nome);
-                        await Context.Message.ReplyAsync($"Personagem {nome} foi excluido!");
+                        await Context.Message.ReplyAsync($"Personagem `{nome}` foi excluido!");
                     }
                     break;
 
-                case "l":
-                case "list":
-                case "lista":
-                case "todos":
-                case "all":
                 case "listar":
+                case "l":
                     await Context.Message.ReplyAsync("Listagem dos personagens:");
                     var personagens = FolderDatabase.ListarPersonagensParaGuilda(Context.Guild.Id);
                     if (personagens is null || personagens.Length == 0)
@@ -102,7 +93,6 @@ namespace MythosBot
                     break;
 
                 case "i":
-                case "info":
                 case "informações":
                 case "informação":
                 case "sobre":
@@ -115,7 +105,7 @@ namespace MythosBot
                     var personagemInfo = FolderDatabase.ListarPersonagensParaGuilda(Context.Guild.Id).FirstOrDefault(p => nome.Equals(p.Nome));
                     if (personagemInfo is null)
                     {
-                        await Context.Message.ReplyAsync($"Personagem {nome} não encontrado.");
+                        await Context.Message.ReplyAsync($"Personagem `{nome}` não encontrado.");
                         break;
                     }
                     else
@@ -193,11 +183,122 @@ namespace MythosBot
                     }
                     break;
 
+                case "e":
+                case "exportar":
+                    var personagemParaExportar = FolderDatabase.ListarPersonagensParaGuilda(Context.Guild.Id).First(x => x.Nome == nome);
+
+                    var exporte = FolderDatabase.ExportarPersonagem(Context.Guild.Id, nome);
+
+                    var arq = new FileAttachment(exporte.Item2, exporte.Item1 + ".json");
+                    await Context.Channel.SendFileAsync(arq);
+                    arq.Stream.Close();
+                    break;
+
+                case "im":
+                case "importar":
+                    if (Context.Message.Attachments.Count == 0)
+                    {
+                        await Context.Message.ReplyAsync("Você precisa pelo menos me mandar um arquivo!");
+                        return;
+                    }
+
+                    int erros = 0;
+                    int acertos = 0;
+                    int arquivo = 0;
+                    foreach (var attatchment in Context.Message.Attachments)
+                    {
+                        arquivo++;
+                        await Context.Channel.SendMessageAsync($"Arquivo {arquivo}:");
+                        if (attatchment.ContentType.StartsWith("application/json"))
+                        {
+                            using var client = new HttpClient();
+                            HttpResponseMessage msg = await client.GetAsync(attatchment.Url);
+                            msg.EnsureSuccessStatusCode();
+
+                            var arqBaixado = await msg.Content.ReadAsStringAsync();
+
+                            try
+                            {
+                                var configuracoes = new JsonSerializerSettings
+                                {
+                                    NullValueHandling = NullValueHandling.Ignore,
+                                    MissingMemberHandling = MissingMemberHandling.Error
+                                };
+
+                                var personagemConvertido = JsonConvert.DeserializeObject<Personagem>(arqBaixado, configuracoes);
+
+                                if (personagemConvertido is null)
+                                {
+                                    erros++;
+                                    await Context.Channel.SendMessageAsync("Você me mandou um arquivo vazio!");
+                                    await Context.Message.AddReactionAsync(Emoji.Parse("❌"));
+                                    continue;
+                                }
+
+                                if (personagemConvertido.Nome is null)
+                                {
+                                    erros++;
+                                    await Context.Channel.SendMessageAsync("O personagem precisa de um nome!");
+                                    await Context.Message.AddReactionAsync(Emoji.Parse("❌"));
+                                    continue;
+                                }
+
+                                if (personagemConvertido.Nome == "")
+                                {
+                                    erros++;
+                                    await Context.Channel.SendMessageAsync("O personagem precisa de um nome!");
+                                    await Context.Message.AddReactionAsync(Emoji.Parse("❌"));
+                                    continue;
+                                }
+
+                                else
+                                {
+                                    await Context.Channel.SendMessageAsync($"Importando `{personagemConvertido.Nome}`...");
+                                    if (FolderDatabase.ContemPersonagemComEsteNome(Context.Guild.Id, personagemConvertido.Nome))
+                                    {
+                                        erros++;
+                                        await Context.Channel.SendMessageAsync("Este personagem já existe!\n");
+                                        await Context.Message.AddReactionAsync(Emoji.Parse("❌"));
+                                    }
+                                    else
+                                    {
+                                        bool donoNãoExiste = personagemConvertido.Autor == 0 || (Context.Guild.GetUser(personagemConvertido.Autor) is null);
+                                        if (donoNãoExiste) //Caso o personagem não tenha autor ou o autor não está neste servidor
+                                            personagemConvertido.Autor = Context.User.Id; //Passamos a ser o autor
+                                        if (nome is null)
+                                            personagemConvertido.Autor = Context.User.Id;
+                                        personagemConvertido.Id = DateTime.Now.Ticks;
+                                        FolderDatabase.AdicionarPersonagem(Context.Guild.Id, personagemConvertido);
+                                        await Context.Channel.SendMessageAsync($"Personagem `{personagemConvertido.Nome}` foi importado com sucesso!{(donoNãoExiste ? "\nE você passa ser o dono deste personagem por eu não ter encontrado o dono deste personagem" : "")}");
+                                        acertos++;
+                                    }
+                                }
+                            }
+                            catch (JsonSerializationException ex)
+                            {
+                                erros++;
+                                await Context.Channel.SendMessageAsync("O arquivo JSON tem um formato que não é compatível com um personagem!");
+                                await Context.Message.AddReactionAsync(Emoji.Parse("❌"));
+                            }
+                        }
+                        else
+                        {
+                            erros++;
+                            await Context.Channel.SendMessageAsync($"Eu preciso de um arquivo JSON!\nVocê me mandou um arquivo {MimeToString.PegarOTipoDoArquivo(attatchment.ContentType.Split(';')[0])}");
+                            continue;
+                        }
+                    }
+                    await Context.Channel.SendMessageAsync($"Pronto!" +
+                        $"\nDentre {Context.Message.Attachments.Count} Arquivo(s), eu consegui importar" +
+                        $" {acertos} Arquivo(s), e eu não consegui importar" +
+                        $" {erros} Arquivo(s).");
+                    break;
                 default:
                     await Context.Message.ReplyAsync($"Sub-comando {comando} desconhecido.");
                     break;
             }
         }
+
 
         [Command("edit", Aliases = ["e", "ed"])]
         public async Task EditPersonagem([Remainder] string nome)
@@ -207,7 +308,7 @@ namespace MythosBot
 
             if (sona == null)
             {
-                await ReplyAsync($"Personagem '{nome}' não encontrado.");
+                await ReplyAsync($"Personagem `{nome}` não encontrado.");
                 return;
             }
 
@@ -222,7 +323,7 @@ namespace MythosBot
 
             if (CommandHandler.AddMessageCallback(Context.User, async (usr, ctx) => await EditLoop(usr, ctx, sona), 100))
             {
-                await ReplyAsync($"Editando o personagem '{nome}'.\n" +
+                await ReplyAsync($"Editando o personagem `{nome}`.\n" +
                     $"Envie mensagens no formato `atributo=valor`.\n" +
                     $"Digite `!` ou `!pronto` para finalizar.\n" +
                     $"Digite `?` ou `?ajuda` para saber quais atributos podem ser modificados\n" +
@@ -241,7 +342,7 @@ namespace MythosBot
             {
                 CommandHandler.RemoveMessageCallback(usr);
                 FolderDatabase.AtualizarPersonagem(ctx.Guild.Id, sona);
-                await ctx.Channel.SendMessageAsync($"Edição do personagem '{sona.Nome}' finalizada com sucesso!");
+                await ctx.Channel.SendMessageAsync($"Edição do personagem `{sona.Nome}` finalizada com sucesso!");
                 return;
             }
 
@@ -318,43 +419,17 @@ namespace MythosBot
             }
         }
 
-        [Command("test")]
-        public async Task AdicionarCallback()
+        [Command("ajuda", Aliases = ["help", "a", "h"])]
+        public async Task Ajuda([Remainder][Optional] string? comando)
         {
-            if (CommandHandler.AddMessageCallback(Context.User, DoThisLoop, 32)) 
+            if (comando is null)
             {
-                await Context.Message.ReplyAsync("Me envie mensagens, eu irei parar de responder quando eu ver uma mensagem que diz !done");
+                await Context.Message.ReplyAsync("Ainda está sendo feita");
             }
             else
             {
-                await Context.Message.ReplyAsync("Você já está nesse teste.");
+                await Context.Message.ReplyAsync("Argumentativo você!\nAinda está sendo feita");
             }
-        }
-        
-        [Command("calc")]
-        public async Task Calculadora()
-        {
-            if (CommandHandler.AddMessageCallback(Context.User, calc, -1)) 
-            {
-                await Context.Message.ReplyAsync("Me envie mensagens, eu irei parar de responder quando eu ver uma mensagem que diz !done");
-            }
-            else
-            {
-                await Context.Message.ReplyAsync("Você já está nesse teste.");
-            }
-        }
-
-        public async void DoThisLoop(SocketGuildUser usr, SocketCommandContext ctx)
-        {
-            if (ctx.Message.Content.Contains("!done")) CommandHandler.RemoveMessageCallback(usr);
-            await ctx.Channel.SendMessageAsync(ctx.Message.Content + $"\n-# falta {CommandHandler.CallbacksTimeout[usr.Id] - 1} mensagens para eu parar de te ouvir.");
-        }
-
-        
-        Dictionary<ulong, List<int>> adds = new Dictionary<ulong, List<int>>();
-        public async void calc(SocketGuildUser usr, SocketCommandContext ctx)
-        {
-            
         }
     }
 }

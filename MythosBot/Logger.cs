@@ -1,7 +1,4 @@
-
 using System.Diagnostics;
-
-
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -11,10 +8,16 @@ namespace MythosBot;
 public class Logger
 {
     public static Stopwatch stopwatch = new Stopwatch();
+    private static StreamWriter LogFile;
     public Logger(DiscordSocketClient client, CommandService service)
     {
         if (!stopwatch.IsRunning)
             stopwatch.Start();
+
+        if (!Directory.Exists(@".\Logs")) Directory.CreateDirectory(@".\Logs");
+
+        LogFile ??= new StreamWriter(@$".\Logs\log{DateTime.Now.Ticks}.txt");
+        LogFile.AutoFlush = true;
 
         if (client is not null)
             client.Log += LogMessage;
@@ -45,24 +48,34 @@ public class Logger
         }
 
         var ts = stopwatch.Elapsed;
-        Console.Write("[{0:00}:{1:00}:{2:00}.{3:000} -", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds);
+        var time = string.Format("[{0:00}:{1:00}:{2:00}.{3:000} -", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds);
 
         if (arg.Exception is CommandException cmdExc)
         {
-            Console.WriteLine($"- Comandos/Exceção] Um erro aconteceu enquanto tentava executar o comando {cmdExc.Command}.");
-            
-            Console.Error.WriteLine(cmdExc);
+            WriteLog($"{time}- Comandos/Exceção] Um erro aconteceu enquanto tentava executar o comando {cmdExc.Command}.");
         }
         else if (arg.Exception is not null)
         {
-            Console.WriteLine($"- Exceção] {arg.Exception.Message}");
-            Console.WriteLine(arg.Exception);
+            WriteLog($"{time}- Exceção] {arg.Exception.Message}");
+            WriteLog(arg.Exception);
         }
         else
         {
-            Console.WriteLine($"- Genérico/{arg.Severity}] {arg.Message}");
+            WriteLog($"{time}- Outros/{arg.Severity}] {arg.Message}");
         }
         Console.ResetColor();
         await Task.Delay(0);
+    }
+
+    private void WriteLog(Exception exception)
+    {
+        Console.WriteLine(exception);
+        LogFile.WriteLine(exception);
+    }
+
+    private void WriteLog(string message)
+    {
+        Console.WriteLine(message);
+        LogFile.WriteLine(message);
     }
 }
