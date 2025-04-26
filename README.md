@@ -16,7 +16,7 @@ O MythosBot foi desenvolvido para facilitar a organização de mesas de RPG, per
 
 ## Funcionalidades
 - [x] Criar e deletar personagens.
-- [ ] Importar e exportar personagens.
+- [x] Importar e exportar personagens.
 - [ ] Gerenciar inventário com criação de itens.
 - [ ] Criar e gerenciar missões.
 - [ ] Criar NPCs, incluindo templates pré-definidos.
