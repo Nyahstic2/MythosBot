@@ -78,6 +78,13 @@ class Program
         {
             var files = new List<string>();
             lg.LogMessage(new LogMessage(LogSeverity.Info, "Cleaner", "Iniciando limpeza de arquivos...")).GetAwaiter().GetResult();
+            if (!Directory.Exists(@".\Database"))
+            {
+                lg.LogMessage(new LogMessage(LogSeverity.Warning, "Cleaner", "A pasta Database não existe.")).GetAwaiter().GetResult();
+                Thread.Sleep(150 * 1000); // 2 Minutos e Meio
+                continue;
+            }
+
             var folders = Directory.EnumerateDirectories(@".\Database");
             foreach (var folder in folders)
             {
