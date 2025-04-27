@@ -6,7 +6,7 @@ public static class Consts
     public static bool IS_BETA = true;
     public static int VERSION_MAJOR = 1;
     public static int VERSION_MINOR = 0;
-    public static int VERSION_PATCH = 0;
+    public static int VERSION_PATCH = 1;
 
     public static string GetVersion()
     {

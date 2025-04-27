@@ -44,6 +44,8 @@ namespace MythosBot
         [Remarks("Digite `.personagem ajuda` para saber os subcomandos deste comando")]
         public async Task GerenciarSona(string comando, [Remainder][Optional] string argumento)
         {
+            var nome = argumento;
+            if (argumento.Length > 128) nome = argumento.Substring(0, 127);
             switch (comando.ToLower())
             {
                 case "n":
@@ -53,42 +55,39 @@ namespace MythosBot
                         await Context.Message.ReplyAsync("Você precisa fornecer um nome para o personagem.");
                         break;
                     }
-
-                    argumento = argumento.Substring(0, 127);
                     var personagem = new Personagem();
-                    personagem.Nome = argumento;
+                    personagem.Nome = nome;
                     personagem.Autor = Context.User.Id;
                     personagem.Id = DateTime.Now.Ticks;
-                    if (!FolderDatabase.ContemPersonagemComEsteNome(Context.Guild.Id,argumento))
+                    if (!FolderDatabase.ContemPersonagemComEsteNome(Context.Guild.Id, nome))
                     {
                         FolderDatabase.AdicionarPersonagem(Context.Guild.Id, personagem);
-                        await Context.Message.ReplyAsync($"Personagem `{argumento}` criado com sucesso!\nPara poder editar o personagem, por favor use .edit <nome do personagem>");
+                        await Context.Message.ReplyAsync($"Personagem `{nome}` criado com sucesso!\nPara poder editar o personagem, por favor use .edit <nome do personagem>");
                     }
                     else
                     {
-                        await Context.Message.ReplyAsync($"O Personagem `{argumento}` já existe!");
+                        await Context.Message.ReplyAsync($"O Personagem `{nome}` já existe!");
                     }
                     break;
 
                 case "r":
                 case "rm":
                 case "remover":
-                    if (string.IsNullOrEmpty(argumento))
+                    if (string.IsNullOrEmpty(nome))
                     {
                         await Context.Message.ReplyAsync("Você precisa fornecer um nome para poder deletar o personagem");
                         break;
                     }
-                    argumento = argumento.Substring(0, 127);
-                    var personagemParaDeletar = FolderDatabase.ListarPersonagensParaGuilda(Context.Guild.Id).First(x => x.Nome == argumento);
+                    var personagemParaDeletar = FolderDatabase.ListarPersonagensParaGuilda(Context.Guild.Id).First(x => x.Nome == nome);
                     if (personagemParaDeletar is not null)
                     {
                         if (personagemParaDeletar.Autor != Context.User.Id || Context.Guild.OwnerId != Context.User.Id)
                         {
-                            await Context.Message.ReplyAsync($"Você precisa ser dono do personagem `{argumento}` para poder deletar.");
+                            await Context.Message.ReplyAsync($"Você precisa ser dono do personagem `{nome}` para poder deletar.");
                             return;
                         }
                         FolderDatabase.RemoverPersonagem(Context.Guild.Id, personagemParaDeletar.Nome);
-                        await Context.Message.ReplyAsync($"Personagem `{argumento}` foi excluido!");
+                        await Context.Message.ReplyAsync($"Personagem `{nome}` foi excluido!");
                     }
                     break;
 
@@ -114,17 +113,15 @@ namespace MythosBot
                 case "informação":
                 case "sobre":
                 case "s":
-                    if (string.IsNullOrEmpty(argumento))
+                    if (string.IsNullOrEmpty(nome))
                     {
                         await Context.Message.ReplyAsync("Você precisa fornecer um nome para o personagem.");
                         break;
                     }
-
-                    argumento = argumento.Substring(0, 127);
-                    var personagemInfo = FolderDatabase.ListarPersonagensParaGuilda(Context.Guild.Id).FirstOrDefault(p => argumento.Equals(p.Nome));
+                    var personagemInfo = FolderDatabase.ListarPersonagensParaGuilda(Context.Guild.Id).FirstOrDefault(p => nome.Equals(p.Nome));
                     if (personagemInfo is null)
                     {
-                        await Context.Message.ReplyAsync($"Personagem `{argumento}` não encontrado.");
+                        await Context.Message.ReplyAsync($"Personagem `{nome}` não encontrado.");
                         break;
                     }
                     else
@@ -204,16 +201,14 @@ namespace MythosBot
 
                 case "e":
                 case "exportar":
-                    if (string.IsNullOrEmpty(argumento))
+                    if (string.IsNullOrEmpty(nome))
                     {
                         await Context.Message.ReplyAsync("Você precisa fornecer um nome para exportar o personagem.");
                         break;
                     }
+                    var personagemParaExportar = FolderDatabase.ListarPersonagensParaGuilda(Context.Guild.Id).First(x => x.Nome == nome);
 
-                    argumento = argumento.Substring(0, 127);
-                    var personagemParaExportar = FolderDatabase.ListarPersonagensParaGuilda(Context.Guild.Id).First(x => x.Nome == argumento);
-
-                    var exporte = FolderDatabase.ExportarPersonagem(Context.Guild.Id, argumento);
+                    var exporte = FolderDatabase.ExportarPersonagem(Context.Guild.Id, nome);
 
                     var arq = new FileAttachment(exporte.Item2, exporte.Item1 + ".json");
                     await Context.Channel.SendFileAsync(arq);
@@ -318,6 +313,11 @@ namespace MythosBot
                         $"\nDentre {Context.Message.Attachments.Count} Arquivo(s), eu consegui importar" +
                         $" {acertos} Arquivo(s), e eu não consegui importar" +
                         $" {erros} Arquivo(s).");
+                    break;
+                case "h":
+                case "a":
+                case "ajuda":
+                    await Context.Message.ReplyAsync($"Um momento...");
                     break;
                 default:
                     await Context.Message.ReplyAsync($"Sub-comando {comando} desconhecido.");
