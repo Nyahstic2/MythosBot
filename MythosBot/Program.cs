@@ -11,14 +11,14 @@ class Program
 {
     public static Configuration configuration = new Configuration();
     private static DiscordSocketClient bot;
-    private static CommandService commands = new CommandService();
+    public static CommandService commands = new CommandService();
 
 
     static bool podeSerFechado = false;
     static void Main(string[] args)
     {
         var cleaner = new Thread(new ThreadStart(CleanTempFiles));
-        Console.Title = $"MythosBot v{Consts.VERSION_MAJOR}.{Consts.VERSION_MINOR}{(Consts.VERSION_PATCH == 0 ? "" : $".{Consts.VERSION_PATCH}")}{(Consts.IS_ALPHA ? "a" : Consts.IS_BETA ? "b" : "")}";
+        Console.Title = Consts.GetVersion();
         AppDomain.CurrentDomain.ProcessExit += (a, b) => {
             Shutdown();
         };

@@ -6,6 +6,7 @@ using NAudio.Wave;
 using Newtonsoft.Json;
 using System.Net.Mime;
 using System.Reflection;
+using System.Runtime.ConstrainedExecution;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -14,64 +15,80 @@ namespace MythosBot
 {
     public class Commands : ModuleBase<SocketCommandContext>
     {
+        [Command("versão", Aliases = ["ver", "about"])]
+        [Summary("Comando para ver a versão do MythosBot")]
+        public async Task Ver()
+        {
+            var ver = Consts.GetVersion().Replace("v", "versão ").Replace("a", " Alpha ").Replace("b", " Beta ");
+
+            await Context.Channel.SendMessageAsync($"{ver}\n" +
+                $"Veja meu progresso [no repositório oficial no github](https://github.com/Nyahstic2/MythosBot) ou [minha página de documentação](https://nyahstic2.github.io/MythosBot/)!");
+        }
+
         [Command("ping")]
+        [Summary("Comando para verificar se o bot está ativo")]
         public async Task Ping()
         {
+            string[] cor = [new Random().Next(255).ToString("X2"), new Random().Next(255).ToString("X2"), new Random().Next(255).ToString("X2")];
             var Embed = new EmbedBuilder();
-            Embed.WithColor(Color.Green);
-            Embed.WithTitle("MythosBot");
-            Embed.WithDescription("O bot está online e funcionando!");
-            Embed.WithFooter("Comando executado com sucesso.");
-            Embed.WithCurrentTimestamp();
+            Embed.WithColor(Color.Parse($"#{string.Join("", cor)}"))
+                 .WithTitle("MythosBot")
+                 .WithDescription("O bot está online e funcionando!")
+                 .WithFooter("Comando executado com sucesso.")
+                 .WithCurrentTimestamp();
             await Context.Message.ReplyAsync(embed: Embed.Build());
         }
 
         [Command("personagem", Aliases = ["p", "c", "char", "character", "persona"])]
-        public async Task GerenciarSona(string comando, [Remainder] string nome = "")
+        [Summary("Cria, deleta, visualiza e lista todos os personagens do servidor")]
+        [Remarks("Digite `.personagem ajuda` para saber os subcomandos deste comando")]
+        public async Task GerenciarSona(string comando, [Remainder][Optional] string argumento)
         {
-            if (nome.Length > 128) nome = nome.Substring(0, 127);
             switch (comando.ToLower())
             {
                 case "n":
                 case "new":
-                    if (string.IsNullOrEmpty(nome))
+                    if (string.IsNullOrEmpty(argumento))
                     {
                         await Context.Message.ReplyAsync("Você precisa fornecer um nome para o personagem.");
                         break;
                     }
+
+                    argumento = argumento.Substring(0, 127);
                     var personagem = new Personagem();
-                    personagem.Nome = nome;
+                    personagem.Nome = argumento;
                     personagem.Autor = Context.User.Id;
                     personagem.Id = DateTime.Now.Ticks;
-                    if (!FolderDatabase.ContemPersonagemComEsteNome(Context.Guild.Id,nome))
+                    if (!FolderDatabase.ContemPersonagemComEsteNome(Context.Guild.Id,argumento))
                     {
                         FolderDatabase.AdicionarPersonagem(Context.Guild.Id, personagem);
-                        await Context.Message.ReplyAsync($"Personagem `{nome}` criado com sucesso!\nPara poder editar o personagem, por favor use .edit <nome do personagem>");
+                        await Context.Message.ReplyAsync($"Personagem `{argumento}` criado com sucesso!\nPara poder editar o personagem, por favor use .edit <nome do personagem>");
                     }
                     else
                     {
-                        await Context.Message.ReplyAsync($"O Personagem `{nome}` já existe!");
+                        await Context.Message.ReplyAsync($"O Personagem `{argumento}` já existe!");
                     }
                     break;
 
                 case "r":
                 case "rm":
                 case "remover":
-                    if (string.IsNullOrEmpty(nome))
+                    if (string.IsNullOrEmpty(argumento))
                     {
                         await Context.Message.ReplyAsync("Você precisa fornecer um nome para poder deletar o personagem");
                         break;
                     }
-                    var personagemParaDeletar = FolderDatabase.ListarPersonagensParaGuilda(Context.Guild.Id).First(x => x.Nome == nome);
+                    argumento = argumento.Substring(0, 127);
+                    var personagemParaDeletar = FolderDatabase.ListarPersonagensParaGuilda(Context.Guild.Id).First(x => x.Nome == argumento);
                     if (personagemParaDeletar is not null)
                     {
                         if (personagemParaDeletar.Autor != Context.User.Id || Context.Guild.OwnerId != Context.User.Id)
                         {
-                            await Context.Message.ReplyAsync($"Você precisa ser dono do personagem `{nome}` para poder deletar.");
+                            await Context.Message.ReplyAsync($"Você precisa ser dono do personagem `{argumento}` para poder deletar.");
                             return;
                         }
                         FolderDatabase.RemoverPersonagem(Context.Guild.Id, personagemParaDeletar.Nome);
-                        await Context.Message.ReplyAsync($"Personagem `{nome}` foi excluido!");
+                        await Context.Message.ReplyAsync($"Personagem `{argumento}` foi excluido!");
                     }
                     break;
 
@@ -97,15 +114,17 @@ namespace MythosBot
                 case "informação":
                 case "sobre":
                 case "s":
-                    if (string.IsNullOrEmpty(nome))
+                    if (string.IsNullOrEmpty(argumento))
                     {
                         await Context.Message.ReplyAsync("Você precisa fornecer um nome para o personagem.");
                         break;
                     }
-                    var personagemInfo = FolderDatabase.ListarPersonagensParaGuilda(Context.Guild.Id).FirstOrDefault(p => nome.Equals(p.Nome));
+
+                    argumento = argumento.Substring(0, 127);
+                    var personagemInfo = FolderDatabase.ListarPersonagensParaGuilda(Context.Guild.Id).FirstOrDefault(p => argumento.Equals(p.Nome));
                     if (personagemInfo is null)
                     {
-                        await Context.Message.ReplyAsync($"Personagem `{nome}` não encontrado.");
+                        await Context.Message.ReplyAsync($"Personagem `{argumento}` não encontrado.");
                         break;
                     }
                     else
@@ -185,9 +204,16 @@ namespace MythosBot
 
                 case "e":
                 case "exportar":
-                    var personagemParaExportar = FolderDatabase.ListarPersonagensParaGuilda(Context.Guild.Id).First(x => x.Nome == nome);
+                    if (string.IsNullOrEmpty(argumento))
+                    {
+                        await Context.Message.ReplyAsync("Você precisa fornecer um nome para exportar o personagem.");
+                        break;
+                    }
 
-                    var exporte = FolderDatabase.ExportarPersonagem(Context.Guild.Id, nome);
+                    argumento = argumento.Substring(0, 127);
+                    var personagemParaExportar = FolderDatabase.ListarPersonagensParaGuilda(Context.Guild.Id).First(x => x.Nome == argumento);
+
+                    var exporte = FolderDatabase.ExportarPersonagem(Context.Guild.Id, argumento);
 
                     var arq = new FileAttachment(exporte.Item2, exporte.Item1 + ".json");
                     await Context.Channel.SendFileAsync(arq);
@@ -265,7 +291,7 @@ namespace MythosBot
                                         bool donoNãoExiste = personagemConvertido.Autor == 0 || (Context.Guild.GetUser(personagemConvertido.Autor) is null);
                                         if (donoNãoExiste) //Caso o personagem não tenha autor ou o autor não está neste servidor
                                             personagemConvertido.Autor = Context.User.Id; //Passamos a ser o autor
-                                        if (nome is null)
+                                        if (argumento is null)
                                             personagemConvertido.Autor = Context.User.Id;
                                         personagemConvertido.Id = DateTime.Now.Ticks;
                                         FolderDatabase.AdicionarPersonagem(Context.Guild.Id, personagemConvertido);
@@ -300,7 +326,9 @@ namespace MythosBot
         }
 
 
-        [Command("edit", Aliases = ["e", "ed"])]
+        [Command("editarpersonagem", Aliases = ["edit", "e", "ed"])]
+        [Summary("Edita uma ficha de personagem")]
+        [Remarks("Você precisa ser o dono do personagem para poder editar-lo")]
         public async Task EditPersonagem([Remainder] string nome)
         {
             var sona = FolderDatabase.ListarPersonagensParaGuilda(Context.Guild.Id)
@@ -404,32 +432,133 @@ namespace MythosBot
             }
         }
 
-        [Command("IniciarServer", Aliases = ["is", "init"])]
-        [RequireOwner]
-        public async Task IniciarDB()
-        {
-            await Context.Message.ReplyAsync("Iniciando banco de dados...");
-            if (!FolderDatabase.GuildaJaExiste(Context.Guild.Id))
-            {
-                await Context.Channel.SendMessageAsync("Banco de dados criado com sucesso!");
-            }
-            else
-            {
-                await Context.Channel.SendMessageAsync("O banco de dados já existia.");
-            }
-        }
-
         [Command("ajuda", Aliases = ["help", "a", "h"])]
+        [Summary("Comando de ajuda do bot")]
         public async Task Ajuda([Remainder][Optional] string? comando)
         {
             if (comando is null)
             {
-                await Context.Message.ReplyAsync("Ainda está sendo feita");
+                var commands = Program.commands.Commands.ToList();
+                const int itemsPerPage = 9;
+                int totalPages = (int)Math.Ceiling((double)commands.Count / itemsPerPage);
+                int currentPage = 0;
+
+                Embed BuildPage(int page)
+                {
+                    var embedBuilder = new EmbedBuilder()
+                        .WithTitle($"Ajuda - Página {page + 1}/{totalPages}")
+                        .WithColor(Color.Blue);
+
+                    var commandsPage = commands
+                        .Skip(page * itemsPerPage)
+                        .Take(itemsPerPage);
+
+                    foreach (var cmd in commandsPage)
+                    {
+                        embedBuilder.AddField(cmd.Name, cmd.Summary ?? "Sem descrição disponível", true);
+                    }
+
+                    return embedBuilder.Build();
+                }
+
+                var embedMessage = await Context.Channel.SendMessageAsync("Digite `.ajuda <nome do comando>` para ter mais informações de um comando",embed: BuildPage(currentPage));
+
+                if (commands.Count > itemsPerPage)
+                {
+                    await embedMessage.AddReactionAsync(new Emoji("⬅️")); 
+                    await embedMessage.AddReactionAsync(new Emoji("➡️")); 
+
+                    var reactionHandler = Context.Client; 
+
+                    async Task ReactionCallback(Cacheable<IUserMessage, ulong> cacheable1, Cacheable<IMessageChannel, ulong> cacheable2, SocketReaction reaction)
+                    {
+                        if (reaction.UserId != Context.User.Id || reaction.MessageId != embedMessage.Id) return;
+
+                        if (reaction.Emote.Name == "⬅️")
+                        {
+                            if (currentPage > 0) currentPage--;
+                            else currentPage = totalPages - 1;
+                            await embedMessage.ModifyAsync(msg => msg.Embed = BuildPage(currentPage));
+                        }
+                        else if (reaction.Emote.Name == "➡️")
+                        {
+                            if (currentPage < totalPages - 1) currentPage++;
+                            else currentPage = 0;
+                            await embedMessage.ModifyAsync(msg => msg.Embed = BuildPage(currentPage));
+                        }
+
+                        var user = await reaction.Channel.GetUserAsync(reaction.UserId);
+                        if (user is IGuildUser guildUser && !guildUser.IsBot)
+                        {
+                            await embedMessage.RemoveReactionAsync(reaction.Emote, guildUser);
+                        }
+                    }
+
+                    reactionHandler.ReactionAdded += ReactionCallback;
+
+                    _ = Task.Delay(TimeSpan.FromMinutes(2)).ContinueWith(_ =>
+                    {
+                        reactionHandler.ReactionAdded -= ReactionCallback;
+                        embedMessage.RemoveAllReactionsAsync();
+                    });
+                }
             }
             else
             {
-                await Context.Message.ReplyAsync("Argumentativo você!\nAinda está sendo feita");
+                var pesquisaComando = Program.commands.Search(comando);
+                if (pesquisaComando.IsSuccess)
+                {
+                    var comandoAchado = pesquisaComando.Commands.First().Command;
+
+                    var aliases = "nenhum outro nome alternativo para este comando";
+                    var comoUsar = "este comando não tem argumentos.";
+
+                    if (comandoAchado.Aliases.Count >= 2) aliases = string.Join(", ", comandoAchado.Aliases);
+                    if (comandoAchado.Parameters.Count > 0)
+                    {
+                        var sBuilder = new StringBuilder();
+                        sBuilder.Append($".{comandoAchado.Aliases[new Random().Next(comandoAchado.Aliases.Count - 1)]} ");
+                        foreach (var argumento in comandoAchado.Parameters)
+                        {
+                            var texto = $"<{argumento.Name}> ";
+                            if (argumento.IsRemainder) texto = texto.Replace("<", "( <").Replace(">", "> )");
+                            if (argumento.IsOptional) texto = texto.Replace('<', '[').Replace('>', ']');
+                            sBuilder.Append(texto);
+                        }
+                        comoUsar = $"`{sBuilder.ToString()}`";
+                    }
+
+                    var embed = new EmbedBuilder()
+                        .WithTitle($"Detalhes do comando: {comandoAchado.Name}")
+                        .WithDescription(comandoAchado.Summary ?? "Sem descrição disponível")
+                        .WithFields(
+                            new()
+                            {
+                                Name = "Observações",
+                                Value = string.IsNullOrEmpty(comandoAchado.Remarks) ? "Nenhuma observação" : comandoAchado.Remarks
+                            },
+                            new()
+                            {
+                                Name = "Nomes alternativos",
+                                Value = aliases
+                            },
+                            new()
+                            {
+                                Name = "Como usar o comando (<> indica obrigatório, [] indica opicional, () indica não necessitar o uso de aspas)",
+                                Value = comoUsar
+                            }
+                        )
+                        .WithColor(Color.Purple);
+
+                    await Context.Channel.SendMessageAsync(embed: embed.Build());
+                }
+                else
+                {
+                    await Context.Channel.SendMessageAsync($"Comando `{comando}` não encontrado.");
+                    await Context.Message.AddReactionAsync(new Emoji("❌"));
+                }
             }
         }
+
     }
 }
