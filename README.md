@@ -1,5 +1,5 @@
 
-# MythosBot v0.5
+# MythosBot v1.1.0b
 Um bot do Discord para organizar personagens, missões e itens do seu RPG de uma forma centralizada.
 
 ## Índice
