@@ -1,3 +1,4 @@
+using Discord;
 using Newtonsoft.Json;
 using System.Text;
 
@@ -7,15 +8,15 @@ public static class FolderDatabase
 {
     public static void Recriar()
     {
-        if (!Directory.Exists(CurrentLocation.Here() + "/Database"))
+        if (!Directory.Exists(CaminhoDaDatabase()))
         {
-            Directory.CreateDirectory(CurrentLocation.Here() + "/Database");
+            Directory.CreateDirectory(CaminhoDaDatabase());
         }
     }
 
     public static bool GuildaJaExiste(ulong id, bool criarCasoNaoEncontrar = true)
     {
-        if (Directory.Exists(CurrentLocation.Here() + "/Database/" + id))
+        if (Directory.Exists(CaminhoDaDatabase() + id))
         {
             return true;
         }
@@ -29,10 +30,13 @@ public static class FolderDatabase
             return false;
         }
     }
-
+    public static string CaminhoDaDatabase()
+    {
+        return CurrentLocation.Here() + "/Database/";
+    }
     public static Personagem[] ListarPersonagensParaGuilda(ulong id)
     {
-        if (Directory.Exists(CurrentLocation.Here() + "/Database/" + id))
+        if (Directory.Exists(CaminhoDaDatabase() + id))
         {
             var personagens = Directory.GetFiles(CurrentLocation.Here() + "/Database/" + id, "*.json");
             Personagem[] lista = new Personagem[personagens.Length];
@@ -50,14 +54,14 @@ public static class FolderDatabase
 
     internal static void AdicionarPersonagem(ulong id, Personagem personagem)
     {
-        if (Directory.Exists(CurrentLocation.Here() + "/Database/" + id))
+        if (Directory.Exists(CaminhoDaDatabase() + id))
         {
-            var path = CurrentLocation.Here() + "/Database/" + id + "/" + personagem.Id + ".json";
+            var path = CaminhoDaDatabase() + id + "/" + personagem.Id + ".json";
             File.WriteAllText(path, JsonConvert.SerializeObject(personagem, Formatting.Indented));
         }
         else
         {
-            Directory.CreateDirectory(CurrentLocation.Here() + "/Database/" + id);
+            Directory.CreateDirectory(CaminhoDaDatabase() + id);
             AdicionarPersonagem(id, personagem);
         }
     }
@@ -65,9 +69,9 @@ public static class FolderDatabase
     internal static void RemoverPersonagem(ulong id, string nome)
     {
         var personagem = ListarPersonagensParaGuilda(id).First(p => p.Nome.Equals(nome));
-        if (Directory.Exists(CurrentLocation.Here() + "/Database/" + id))
+        if (Directory.Exists(CaminhoDaDatabase() + id))
         {
-            var path = CurrentLocation.Here() + "/Database/" + id + "/" + personagem.Id + ".json";
+            var path = CaminhoDaDatabase() + id + "/" + personagem.Id + ".json";
             File.Delete(path);
         }
         else
@@ -91,7 +95,7 @@ public static class FolderDatabase
 
     internal static void AtualizarPersonagem(ulong id, Personagem sona)
     {
-        string directoryPath = CurrentLocation.Here() + "/Database/" + id;
+        string directoryPath = CaminhoDaDatabase() + id;
 
         if (!Directory.Exists(directoryPath))
         {
@@ -117,7 +121,7 @@ public static class FolderDatabase
     internal static (string, string) ExportarPersonagem(ulong id, string nome)
     {
         var personagem = ListarPersonagensParaGuilda(id).First(x => x.Nome == nome);
-        string directoryPath = CurrentLocation.Here() + "/Database/" + id;
+        string directoryPath = CaminhoDaDatabase() + id;
 
         var jsonBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(personagem, Formatting.Indented));
         var jsonSize = jsonBytes.Length;
@@ -128,5 +132,34 @@ public static class FolderDatabase
         file.Close();
 
         return (personagem == null) ? ("", "") : (personagem.Nome, $"{directoryPath}/temp{val}.deleteme");
+    }
+
+    internal static bool LimparArquivosTemporários(ulong id)
+    {
+        var lg = new Logger(null, null);
+        var files = Directory.EnumerateFiles(CaminhoDaDatabase() + id).ToList();
+        files = files.Where(x => x.Contains("temp") && x.EndsWith(".deleteme")).ToList();
+        if (files.Count == 0)
+        {
+            lg.LogMessage(new LogMessage(LogSeverity.Info, "Cleaner", "Nenhum arquivo encontrado")).GetAwaiter().GetResult();
+            return false;
+        }
+        else
+        {
+            foreach (var tempFile in files)
+            {
+                try
+                {
+                    File.Delete(tempFile);
+                    lg.LogMessage(new LogMessage(LogSeverity.Info, "Cleaner", $"Deletado {tempFile}")).GetAwaiter().GetResult();
+                }
+                catch (Exception ex)
+                {
+                    lg.LogMessage(new LogMessage(LogSeverity.Error, "Cleaner", $"Não consegui deletar {tempFile}, talvez consiga mais tarde...")).GetAwaiter().GetResult();
+                }
+            }
+            lg.LogMessage(new LogMessage(LogSeverity.Info, "Cleaner", "Limpeza finalizada.")).GetAwaiter().GetResult();
+            return true;
+        }
     }
 }

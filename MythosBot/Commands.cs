@@ -39,10 +39,30 @@ namespace MythosBot
             await Context.Message.ReplyAsync(embed: Embed.Build());
         }
 
+        [Command("forçarlimpeza", Aliases = ["forceclean", "fl", "fc"])]
+        [Summary("Força a limpeza de arquivos temporários no database")]
+        [Remarks("Apenas o dono do servidor poderá usar o comando.")]
+        [RequireOwner]
+        public async Task ForceClean()
+        {
+            await Context.Channel.SendMessageAsync($"Limpando arquivos temporários do servidor {Context.Guild.Name}...");
+            try
+            {
+                if (!FolderDatabase.LimparArquivosTemporários(Context.Guild.Id))
+                    await Context.Channel.SendMessageAsync("Não tem nenhum arquivo temporário!");
+                else
+                    await Context.Channel.SendMessageAsync("Limpo!");
+            }
+            catch(Exception ex)
+            {
+                throw; //Oops
+            }
+        }
+
         [Command("personagem", Aliases = ["p", "c", "char", "character", "persona"])]
         [Summary("Cria, deleta, visualiza e lista todos os personagens do servidor")]
         [Remarks("Digite `.personagem ajuda` para saber os subcomandos deste comando")]
-        public async Task GerenciarSona(string comando, [Remainder][Optional] string argumento)
+        public async Task GerenciarSona(string comando, [Remainder] string argumento = "")
         {
             var nome = argumento;
             if (argumento.Length > 128) nome = argumento.Substring(0, 127);
@@ -334,6 +354,7 @@ namespace MythosBot
             var sona = FolderDatabase.ListarPersonagensParaGuilda(Context.Guild.Id)
                 .FirstOrDefault(p => p.Nome.Equals(nome, StringComparison.OrdinalIgnoreCase));
 
+
             if (sona == null)
             {
                 await ReplyAsync($"Personagem `{nome}` não encontrado.");
@@ -351,11 +372,14 @@ namespace MythosBot
 
             if (CommandHandler.AddMessageCallback(Context.User, async (usr, ctx) => await EditLoop(usr, ctx, sona), 100))
             {
-                await ReplyAsync($"Editando o personagem `{nome}`.\n" +
+                _Messages.Add(Context.User.Id, new List<IMessage>());
+                var msg = await ReplyAsync($"Editando o personagem `{nome}`.\n" +
                     $"Envie mensagens no formato `atributo=valor`.\n" +
-                    $"Digite `!` ou `!pronto` para finalizar.\n" +
                     $"Digite `?` ou `?ajuda` para saber quais atributos podem ser modificados\n" +
+                    $"Digite `!` ou `!pronto` para finalizar.\n" +
+                    $"**Quando pronto, as mensagens serão apagadas automaticamente**\n" +
                     $"-# Você terá 100 mensagens para poder editar o personagem, mais que isso eu irei ignorar.");
+                _Messages[Context.User.Id].Add(msg);
             }
             else
             {
@@ -364,19 +388,34 @@ namespace MythosBot
         }
 
         int erros = 0;
+        Dictionary<ulong, List<IMessage>> _Messages = new();
         private async Task EditLoop(SocketGuildUser usr, SocketCommandContext ctx, Personagem sona)
         {
+            _Messages[usr.Id].Add(ctx.Message);
+
             if (ctx.Message.Content.ToLower().Equals("!")  || ctx.Message.Content.ToLower().Equals("!pronto"))
             {
                 CommandHandler.RemoveMessageCallback(usr);
                 FolderDatabase.AtualizarPersonagem(ctx.Guild.Id, sona);
-                await ctx.Channel.SendMessageAsync($"Edição do personagem `{sona.Nome}` finalizada com sucesso!");
+                var msgFinalEdit = await ctx.Channel.SendMessageAsync($"Edição do personagem `{sona.Nome}` finalizada com sucesso!");
+                _Messages[usr.Id].Add(msgFinalEdit);
+                
+
+                new Thread(new ThreadStart(async () => {
+                    await (_Messages[usr.Id].First() as IUserMessage).ModifyAsync(x => x.Content = msgFinalEdit.Content);
+                    foreach (var message in _Messages[usr.Id].Skip(1))
+                    {
+                        await message.DeleteAsync();
+                        await Task.Delay(300);
+                    }
+                })).Start();
                 return;
             }
 
             if (ctx.Message.Content.ToLower().Equals("?") || ctx.Message.Content.ToLower().Equals("?ajuda"))
             {
-                await ctx.Channel.SendMessageAsync(sona.AtributosDisponiveis());
+                var msgAttr = await ctx.Channel.SendMessageAsync(sona.AtributosDisponiveis());
+                _Messages[usr.Id].Add(msgAttr);
                 return;
             }
 
@@ -386,7 +425,8 @@ namespace MythosBot
                 erros++;
                 if (erros == 2)
                 {
-                    await ctx.Channel.SendMessageAsync("Formato inválido. Use `atributo=valor`.");
+                    var msgInvalid = await ctx.Channel.SendMessageAsync("Formato inválido. Use `atributo=valor`.");
+                    _Messages[usr.Id].Add(msgInvalid);
                     erros = 0;
                 }
                 return;
@@ -410,7 +450,8 @@ namespace MythosBot
             {
                 if (!Attribute.IsDefined(propriedade, typeof(EditavelAttribute)))
                 {
-                    await ctx.Channel.SendMessageAsync($"Atributo '{atributo}' não é editável, tente outro");
+                    var msgNotEditable = await ctx.Channel.SendMessageAsync($"Atributo '{atributo}' não é editável, tente outro");
+                    _Messages[usr.Id].Add(msgNotEditable);
                     return;
                 }
 
@@ -418,17 +459,20 @@ namespace MythosBot
                 {
                     object valorConvertido = Convert.ChangeType(valor, propriedade.PropertyType);
                     propriedade.SetValue(sona, valorConvertido);
-                    await ctx.Channel.SendMessageAsync($"Atributo '{atributo}' atualizado para '{valor}'.");
+                    var msgEditSucess = await ctx.Channel.SendMessageAsync($"Atributo '{atributo}' atualizado para '{valor}'.");
+                    _Messages[usr.Id].Add(msgEditSucess);
                     erros = 0;
                 }
                 catch
                 {
-                    await ctx.Channel.SendMessageAsync($"Falha ao definir '{atributo}'. Tipo incompatível.");
+                    var msgNotSameType = await ctx.Channel.SendMessageAsync($"Falha ao definir '{atributo}'. Tipo incompatível.");
+                    _Messages[usr.Id].Add(msgNotSameType);
                 }
             }
             else
             {
-                await ctx.Channel.SendMessageAsync($"Atributo '{atributo}' não reconhecido.");
+                var msgNotRecognized = await ctx.Channel.SendMessageAsync($"Atributo '{atributo}' não reconhecido.");
+                _Messages[usr.Id].Add(msgNotRecognized);
             }
         }
 

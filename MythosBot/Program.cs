@@ -71,7 +71,7 @@ class Program
 
     }
 
-    private static void CleanTempFiles()
+    public static void CleanTempFiles()
     {
         var lg = new Logger(null, null);
         while (true)
