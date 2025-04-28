@@ -70,6 +70,7 @@ namespace MythosBot
             {
                 case "n":
                 case "new":
+                case "novo":
                     if (string.IsNullOrEmpty(argumento))
                     {
                         await Context.Message.ReplyAsync("Você precisa fornecer um nome para o personagem.");
@@ -231,7 +232,7 @@ namespace MythosBot
                     var exporte = FolderDatabase.ExportarPersonagem(Context.Guild.Id, nome);
 
                     var arq = new FileAttachment(exporte.Item2, exporte.Item1 + ".json");
-                    await Context.Channel.SendFileAsync(arq);
+                    await Context.Channel.SendFileAsync(arq, $"Aqui está o personagem `{personagemParaExportar.Nome}`!");
                     arq.Stream.Close();
                     break;
 
@@ -333,11 +334,6 @@ namespace MythosBot
                         $"\nDentre {Context.Message.Attachments.Count} Arquivo(s), eu consegui importar" +
                         $" {acertos} Arquivo(s), e eu não consegui importar" +
                         $" {erros} Arquivo(s).");
-                    break;
-                case "h":
-                case "a":
-                case "ajuda":
-                    await Context.Message.ReplyAsync($"Um momento...");
                     break;
                 default:
                     await Context.Message.ReplyAsync($"Sub-comando {comando} desconhecido.");
