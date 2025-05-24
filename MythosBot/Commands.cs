@@ -22,7 +22,7 @@ namespace MythosBot
             var ver = Consts.GetVersion().Replace("v", "versão ").Replace("a", " Alpha ").Replace("b", " Beta ");
 
             await Context.Channel.SendMessageAsync($"{ver}\n" +
-                $"Veja meu progresso [no repositório oficial no github](https://github.com/Nyahstic2/MythosBot) ou [minha página de documentação](https://nyahstic2.github.io/MythosBot/)!");
+                $"Veja meu progresso [no repositório oficial no github](https://github.com/Nyahstic2/MythosBot/tree/labs) ou [minha página de documentação](https://nyahstic2.github.io/MythosBot/)!");
         }
 
         [Command("ping")]

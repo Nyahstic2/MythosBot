@@ -99,7 +99,7 @@ public static class FolderDatabase
 
         if (!Directory.Exists(directoryPath))
         {
-            // Se a pasta não existir, não há personagens para atualizar
+            // Se a pasta nï¿½o existir, nï¿½o hï¿½ personagens para atualizar
             return;
         }
 
@@ -134,7 +134,7 @@ public static class FolderDatabase
         return (personagem == null) ? ("", "") : (personagem.Nome, $"{directoryPath}/temp{val}.deleteme");
     }
 
-    internal static bool LimparArquivosTemporários(ulong id)
+    internal static bool LimparArquivosTemporÃ¡rios(ulong id)
     {
         var lg = new Logger(null, null);
         var files = Directory.EnumerateFiles(CaminhoDaDatabase() + id).ToList();
@@ -155,7 +155,7 @@ public static class FolderDatabase
                 }
                 catch (Exception ex)
                 {
-                    lg.LogMessage(new LogMessage(LogSeverity.Error, "Cleaner", $"Não consegui deletar {tempFile}, talvez consiga mais tarde...")).GetAwaiter().GetResult();
+                    lg.LogMessage(new LogMessage(LogSeverity.Error, "Cleaner", $"Nï¿½o consegui deletar {tempFile}, talvez consiga mais tarde...")).GetAwaiter().GetResult();
                 }
             }
             lg.LogMessage(new LogMessage(LogSeverity.Info, "Cleaner", "Limpeza finalizada.")).GetAwaiter().GetResult();

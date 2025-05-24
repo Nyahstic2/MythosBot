@@ -14,9 +14,9 @@ public class Logger
         if (!stopwatch.IsRunning)
             stopwatch.Start();
 
-        if (!Directory.Exists(@".\Logs")) Directory.CreateDirectory(@".\Logs");
+        if (!Directory.Exists(@"./Logs")) Directory.CreateDirectory(@"./Logs");
 
-        LogFile ??= new StreamWriter(@$".\Logs\log{DateTime.Now.Ticks}.txt");
+        LogFile ??= new StreamWriter(@$"./Logs/log{DateTime.Now.Ticks}.txt");
         LogFile.AutoFlush = true;
 
         if (client is not null)

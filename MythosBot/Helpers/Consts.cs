@@ -2,8 +2,8 @@ namespace MythosBot;
 
 public static class Consts
 {
-    public static bool IS_ALPHA = false;
-    public static bool IS_BETA = true;
+    public static bool IS_ALPHA = true;
+    public static bool IS_BETA = false;
     public static int VERSION_MAJOR = 1;
     public static int VERSION_MINOR = 1;
     public static int VERSION_PATCH = 0;

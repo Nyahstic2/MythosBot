@@ -4,6 +4,7 @@ using Discord.WebSocket;
 using Discord.Commands;
 using Discord;
 using System.Reflection;
+using MythosBot.Helpers;
 
 namespace MythosBot;
 
@@ -17,6 +18,7 @@ class Program
     static bool podeSerFechado = false;
     static void Main(string[] args)
     {
+        ImageGenerator.GenerateJpg("MythosBot.jpg", "MythosBot", 400, 200);
         var cleaner = new Thread(new ThreadStart(CleanTempFiles));
         Console.Title = Consts.GetVersion();
         AppDomain.CurrentDomain.ProcessExit += (a, b) => {
@@ -78,14 +80,14 @@ class Program
         {
             var files = new List<string>();
             lg.LogMessage(new LogMessage(LogSeverity.Info, "Cleaner", "Iniciando limpeza de arquivos...")).GetAwaiter().GetResult();
-            if (!Directory.Exists(@".\Database"))
+            if (!Directory.Exists(@"./Database"))
             {
                 lg.LogMessage(new LogMessage(LogSeverity.Warning, "Cleaner", "A pasta Database não existe.")).GetAwaiter().GetResult();
                 Thread.Sleep(150 * 1000); // 2 Minutos e Meio
                 continue;
             }
 
-            var folders = Directory.EnumerateDirectories(@".\Database");
+            var folders = Directory.EnumerateDirectories(@"./Database");
             foreach (var folder in folders)
             {
                 files.AddRange(Directory.EnumerateFiles(folder));
